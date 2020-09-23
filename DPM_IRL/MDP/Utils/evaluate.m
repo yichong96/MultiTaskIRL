@@ -46,12 +46,14 @@ nA = mdp.nActions;
 
 % Linear algebra policy evaluation
 % ================================================
+
 I = eye(nS);
 Tpi = zeros(nS, nS);
-
 % index rewards based on current policy
-R = mdp.reward(piL);
 
+idx = sub2ind(size(mdp.reward), 1:size(mdp.reward,1), piL');
+R = mdp.reward(idx)';
+%R = mdp.reward(piL);
 % build transition matrix P(s|s')
 for a = 1:nA
     idx = find(piL == a);
@@ -61,8 +63,7 @@ for a = 1:nA
 end
 
 % computation of inverse
-V = R \ (I - mdp.discount * Tpi);
-V = V'; % change shape from (1x750) to (750x1)
+V = (I - mdp.discount * Tpi) \ R;
 H = 0;  % not sure what H is
 
 % ================================================
