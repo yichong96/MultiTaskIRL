@@ -1,7 +1,7 @@
 function [piL, V, Q, H] = policyIteration(mdp, oldpi, opts)
 
 MAX_ITERS = 10^4;
-EPS = 0.1;
+EPS = 10^-12;
 SHOW_MSG  = 0;
 if nargin == 3
     if ~isempty(opts.MAX_ITERS)
@@ -30,7 +30,7 @@ for iter = 1:MAX_ITERS
     %piL -> index in which Q values is the highest.
     %index 1 corresponds to action 0
     done     = isequal(piL, oldpi) || approxeq(V, oldV, EPS);
-
+    %norm(V-oldV)
     if SHOW_MSG == 1
         v0   = full(mdp.start'*V);
         diff = norm(V-oldV);
