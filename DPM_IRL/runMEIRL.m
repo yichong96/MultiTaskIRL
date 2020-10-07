@@ -2,7 +2,7 @@
 
 close all;
 clear all;
-LASTN = maxNumCompThreads(1);
+LASTN = maxNumCompThreads('automatic')
 
 %probName = 'gridworld';
 %probName = 'highway3';
@@ -17,7 +17,7 @@ alg.name    = 'EM_IRL';
 alg.llhType   = 'MLIRL';
 alg.priorType = 'Uniform';
 
-alg.name    = 'DPM_BIRL_MH';
+alg.name    = 'DPM_BIRL_MHL';
 alg.llhType   = 'BIRL';
 % alg.priorType = 'NG';
 alg.priorType = 'Uniform';

@@ -22,6 +22,7 @@ if iscell(trajCnt)
             x = x + n*(NBQ1(s, a) - NBQ2(s, a));
         end
     end
+% when only updating the cluster assignment
 else
     for t = 1:size(trajCnt, 1)
         s = trajCnt(t, 1);

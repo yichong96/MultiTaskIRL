@@ -1,15 +1,15 @@
 % BIRL likelihood
 % Ramachandran & Amir, Bayesian inverse reinforcement learning, IJCAI 2007
 %
-function [llh, NBQ] = calLogLLH_BIRL(w, eta, ...
+function [llh, NBQ, grad] = calLogLLH_BIRL(w, eta, ...
     trajInfo, piL, H, dQ, mdp)
 
 mdp = convertW2RSepsis(w, mdp);
 if isempty(piL) || isempty(H)
     [piL, ~, QL, ~] = policyIteration(mdp);
-    % if nargout == 2 && isempty(dQ)
-    %     dQ = calGradQ(piL, mdp);
-    % end
+    if nargout == 3 && isempty(dQ)
+        dQ = calGradQ(piL, mdp);
+    end
 else
     VL = H*w;
     QL = QfromV(VL, mdp);
@@ -31,29 +31,29 @@ for i = 1:size(trajInfo.cnt, 1)
     llh = llh + NBQ(s, a)*n;
 end
 
-% if nargout == 2
-%     % compute soft-max policy
-%     pi_sto = exp(BQ);
-%     pi_sto = bsxfun(@rdivide, pi_sto, sum(pi_sto, 2));
+if nargout == 3
+    % compute soft-max policy
+    pi_sto = exp(BQ);
+    pi_sto = bsxfun(@rdivide, pi_sto, sum(pi_sto, 2));
 
-%     % calculate dlogPi/dw
-%     dlogPi = zeros(nF, nS*nA);
-%     for f = 1:nF
-%         x = reshape(dQ(f, :), nS, nA);
-%         y = sum(pi_sto.*x, 2);
-%         z = eta.*bsxfun(@minus, x, y);
-%         dlogPi(f, :) = reshape(z, 1, nS*nA);
-%     end
+    % calculate dlogPi/dw
+    dlogPi = zeros(nF, nS*nA);
+    for f = 1:nF
+        x = reshape(dQ(f, :), nS, nA);
+        y = sum(pi_sto.*x, 2);
+        z = eta.*bsxfun(@minus, x, y);
+        dlogPi(f, :) = reshape(z, 1, nS*nA);
+    end
 
-%     % calculate gradient of reward function
-%     grad = 0;
-%     for i = 1:size(trajInfo.cnt, 1)
-%         s = trajInfo.cnt(i, 1);
-%         a = trajInfo.cnt(i, 2);
-%         n = trajInfo.cnt(i, 3);
-%         j = (a-1)*nS+s;
-%         grad = grad+n*dlogPi(:, j);
-%     end
-% end
+    % calculate gradient of reward function
+    grad = 0;
+    for i = 1:size(trajInfo.cnt, 1)
+        s = trajInfo.cnt(i, 1);
+        a = trajInfo.cnt(i, 2);
+        n = trajInfo.cnt(i, 3);
+        j = (a-1)*nS+s;
+        grad = grad+n*dlogPi(:, j);
+    end
+end
 
 end

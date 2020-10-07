@@ -23,42 +23,55 @@ cl = init(tr, mdp, opts);
 elapsedT = toc(startT);
 cl = relabelClustAssign(cl);
 
-pr = calDPMLogPost(tr.set, cl.b, cl.w, cl.p, mdp, opts);
+[pr, Qcells] = calDPMLogPost(tr.set, cl.b, cl.w, cl.p, mdp, opts);
 fprintf('+    init : %10.2f %10s %8.2f sec ', pr, '', elapsedT);
 printClustAssign(cl.b);
 
 maxCl.logPost = -inf;
-[maxCl, hst, ~] = saveHist(cl, pr, maxCl, [], 1, elapsedT);
+[maxCl, hst, ~] = saveHist(cl, pr, maxCl, [], 1, elapsedT, Qcells);
 
 % Main algorithm
 for iter = 1:opts.maxIters
+    tempT_1 = tic;
+
     for m = randperm(tr.n)      % random permutation of ordering of trajectories
         cl = updateClustAssign(m, tr, cl, mdp, opts);
     end
+    elapsedT = toc(tempT_1)
+
     cl = relabelClustAssign(cl);
+    tempT_2 = tic;
 
     for k = randperm(max(cl.b)) % random permutation of ordering of clusters
         cl = updateWeight(k, tr, cl, mdp, opts);
     end
+    elapsedT = toc(tempT_2);
 
     elapsedT = toc(startT);
-    pr = calDPMLogPost(tr.set, cl.b, cl.w, cl.p, mdp, opts);
-    [maxCl, hst, bUpdate] = saveHist(cl, pr, maxCl, hst, iter + 1, elapsedT);
+    [pr, Qcells] = calDPMLogPost(tr.set, cl.b, cl.w, cl.p, mdp, opts);
+    [maxCl, hst, bUpdate] = saveHist(cl, pr, maxCl, hst, iter + 1, elapsedT, Qcells);
+
+    if (mod(iter,50) == 0)
+        fprintf('saving maxCl \n');
+        sol = maxCl;
+        save('sol_langevein.mat','sol')
+    end
 
     if iter == 1 || mod(iter, 100) == 0 || bUpdate || elapsedT > opts.maxTime
         fprintf('+ %4d-th : %10.2f %10.2f %8.2f sec ', ...
             iter, pr, maxCl.logPost, elapsedT);
         printClustAssign(maxCl.belongTo);
     end
-    if elapsedT > opts.maxTime
-        fprintf('# time out\n');
-        break;
-    end
+    % if elapsedT > opts.maxTime
+    %     fprintf('# time out\n');
+    %     break;
+    % end
 end
 sol     = maxCl;
 logPost = maxCl.logPost;
+save('sol_langevein.mat','sol')
 fprintf('\n\n');
-
+exit
 end
 
 
@@ -112,12 +125,13 @@ function cl = updateWeight(k, tr, cl, mdp, opts)
 
 sigma = 1e-2;
 for iiter = 1:opts.wIters;
+    tic
     trajInfo = getTrajInfo(tr.set(cl.b == k, :, :), mdp);
     w = cl.w(:, k);
     p = cl.p(:, k);
     v = cl.v(:, k);
     if isnan(cl.llh(k))
-        [llh, gradL]   = calLogLLH(w, trajInfo, p, [], [], mdp, opts);
+        [llh, Qcells, gradL]   = calLogLLH(w, trajInfo, p, [], [], mdp, opts);
         [prior, gradP] = calLogPrior(w, opts);
         cl.llh(k)      = llh;
         cl.prior(k)    = prior;
@@ -133,7 +147,7 @@ for iiter = 1:opts.wIters;
 
     mdp = convertW2RSepsis(w2, mdp);
     [p2, v2] = policyIteration(mdp);
-    [llh2, gradL2]   = calLogLLH(w2, trajInfo, p2, [], [], mdp, opts);
+    [llh2, Qcells, gradL2]   = calLogLLH(w2, trajInfo, p2, [], [], mdp, opts);
     [prior2, gradP2] = calLogPrior(w2, opts);
     logP2 = llh2 + prior2;
     grad2 = gradL2 + gradP2;
@@ -152,6 +166,7 @@ for iiter = 1:opts.wIters;
         cl.gradL(:, k) = gradL2;
         cl.gradP(:, k) = gradP2;
     end
+    toc
 end
 
 end
@@ -184,19 +199,37 @@ function cl = init(tr, mdp, opts)
 %     cl.v(:, i) = v;
 % end
 
-cl.b = randi(tr.n, tr.n, 1); %ones(tr.n, 1); %
-
+initial_cluster = 10;
+cl.b = randi(initial_cluster, tr.n, 1);
+%cl.b = randi(tr.n, tr.n, 1); %ones(tr.n, 1); %
+%cap intial cluster size
+%cl.b = cluster asssignment for each data trajectory
+%cl.w = cluster weight for each data trajectory
+%cl.p = cluster policy for each data trajectory
+%cl.v = cluster value for each data value
 N = max(cl.b);
-cl.w = [];
-cl.p = [];
-cl.v = [];
+
 for i = 1:N
-    i
+    indicesFill = find(cl.b == i); % vector containing indices value equal to i
     [w, p, v]  = newWeight(mdp, opts);
-    cl.w(:, i) = w;
-    cl.p(:, i) = p;
-    cl.v(:, i) = v;
+    for j = 1:length(indicesFill)
+        cl.w(:, indicesFill(j)) = w;
+        cl.p(:, indicesFill(j)) = p;
+        cl.v(:, indicesFill(j)) = v;
+    end
 end
+% cl.b = randi(tr.n, tr.n, 1); %ones(tr.n, 1); %
+
+% N = max(cl.b);
+% cl.w = [];
+% cl.p = [];
+% cl.v = [];
+% for i = 1:N
+%     [w, p, v]  = newWeight(mdp, opts);
+%     cl.w(:, i) = w;
+%     cl.p(:, i) = p;
+%     cl.v(:, i) = v;
+% end
 cl.llh   = nan(N, 1);
 cl.prior = nan(N, 1);
 cl.gradL = nan(size(cl.w));
@@ -238,7 +271,7 @@ end
 end
 
 
-function [maxCl, hst, bUpdate] = saveHist(cl, pr, maxCl, hst, i, elapsedT)
+function [maxCl, hst, bUpdate] = saveHist(cl, pr, maxCl, hst, i, elapsedT, Qcells)
 
 bUpdate = false;
 if maxCl.logPost < pr
@@ -247,6 +280,7 @@ if maxCl.logPost < pr
     maxCl.policy   = cl.p;
     maxCl.value    = cl.v;
     maxCl.logPost  = pr;
+    maxCl.Qcells = Qcells;
     bUpdate = true;
 end
 hst.cl{i}      = cl;

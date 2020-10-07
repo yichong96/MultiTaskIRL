@@ -4,6 +4,8 @@ function dQ = calGradQ(piL, mdp)
 
 nS = mdp.nStates;
 nA = mdp.nActions;
+tic
+fprintf('calculating gradient Q \n')
 
 % calculate dQ/dw
 Epi = sparse(nS, nS*nA);
@@ -34,6 +36,6 @@ else
     end
 end
 dQ = dQ';
-
-
+fprintf('finish calculating gradient Q \n')
+toc
 end

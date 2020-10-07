@@ -13,5 +13,4 @@ if length(x) ~= length(y)
 else
     p = norm(x - y, 'inf') < tol;
 end
-
 end

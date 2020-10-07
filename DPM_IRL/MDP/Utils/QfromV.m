@@ -22,7 +22,7 @@ Q = zeros(nS, nA);
 % size(V)
 for a = 1:nA
    Q(:, a) = mdp.reward(:, a) ...
-       + mdp.discount*(squeeze(mdp.transition_reshape(:, :, a))'*V);
+       + mdp.discount*(squeeze(mdp.transition_reshape(:, :, a))'* V);
    end
 
 % Q = zeros(nS,nA);

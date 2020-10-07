@@ -2,14 +2,17 @@
 % given reward function w and inverse temperature eta
 %   log p(X | w, opts.eta)
 %
-function [llh, NBQ] = calLogLLH(w, trajInfo, piL, H, dQ, mdp, opts)
+function [llh, NBQ, gradQ] = calLogLLH(w, trajInfo, piL, H, dQ, mdp, opts)
 
 if strcmp(opts.llhType, 'BIRL')
     if nargout == 1
         llh = calLogLLH_BIRL(w, opts.eta, ...
             trajInfo, piL, H, dQ, mdp);
-    else
+    elseif nargout == 2
         [llh, NBQ] = calLogLLH_BIRL(w, opts.eta, ...
+            trajInfo, piL, H, dQ, mdp);
+    else
+        [llh, NBQ, gradQ] = calLogLLH_BIRL(w, opts.eta, ...
             trajInfo, piL, H, dQ, mdp);
     end
 

@@ -11,17 +11,18 @@ mdp  = sepsis(discount)
 % only need matrix of size [no.trajs, trajLength, value/policy]
 % load trajectory data
 %data = generateDemonstration(mdp, problem);
-load('./MDP/demonstrations_states_19.mat');
-load('./MDP/demonstrations_actions_19.mat');
+load('./MDP/demonstrations_states_sample.mat');
+load('./MDP/demonstrations_actions_sample.mat');
 load('./MDP/transitionSepsis_reshape.mat');
 
 
 %scale down problem
 %demonstrations_states = demonstrations_states(1:2,:)
 %demonstrations_actions = demonstrations_actions(1:2,:)
-demonstrations_states = demonstrations_states_19(:, 1:20);	% last index is icustayid
-demonstrations = cat(3,demonstrations_states,demonstrations_actions_19);
+demonstrations_states = demonstrations_states_sample(:, 1:20);	% last index is icustayid
+demonstrations = cat(3,demonstrations_states,demonstrations_actions_sample);
 mdp.T = reshape(transMat_reshape, 750, 750*25);
+mdp.T = mdp.discount.*mdp.T';
 [sol, ~, hst] = feval(irlOpts.alg, demonstrations, mdp, irlOpts); % feval -> matlab function
 
 

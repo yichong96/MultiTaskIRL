@@ -55,17 +55,17 @@ if strcmp(alg, 'EM_IRL')
     params.EMrestart  = 1;          % # of random restart for EM
 
 elseif strcmp(alg, 'DPM_BIRL_MH')
-    params.alpha      = 0.5;          % concentration parameter for DP
-    params.maxIters   = 1500;      % # of iterations for MH
+    params.alpha      = 1;          % concentration parameter for DP
+    params.maxIters   = 400;      % # of iterations for MH
     params.clIters    = 2;          % # of iterations for cluster assignment update
     params.wIters     = 10;         % # of iterations for reward update
     params.newIters   = 100;       % # of iterations for transfer
 
 elseif strcmp(alg, 'DPM_BIRL_MHL')
-    params.alpha      = .01;          % concentration parameter for DP
+    params.alpha      = 1;          % concentration parameter for DP
     params.maxIters   = 100;      % # of iterations for MH
     params.clIters    = 2;         % # of iterations for cluster assignment update
-    params.wIters     = 10;         % # of iterations for reward update
+    params.wIters     = 4;         % # of iterations for reward update
     params.newIters   = 100;       % # of iterations for transfer
 
 end

@@ -1,9 +1,13 @@
 % Metropolis-Hastings algorithm for IRL with multiple experts
 %
 function [sol, logPost, hst] = DPM_BIRL_MH(trajSet, mdp, opts)
-
+global accept
+global total
+total = 0
+accept = 0
 fprintf('- DPM-BIRL using MH\n');
 
+useExisting = 1
 % build distribution for 1d reward value
 opts = getRewardDist(opts);
 
@@ -15,17 +19,24 @@ for i = 1:tr.n
     info = getTrajInfo(tr.set(i, :, :), mdp);
     tr.cnt{i} = info.cnt;
 end
-
-% initialize cluster
 startT = tic;
-cl = init(tr, mdp, opts);
+% initialize cluster
+if useExisting
+    load('./sol_800.mat');
+    cl.b = sol.belongTo
+    cl.w = sol.weight
+    cl.v = sol.value
+    cl.p = sol.policy
+else
+    cl = init(tr, mdp, opts);
+    cl = relabelClustAssign(cl);
+end
 elapsedT = toc(startT);
-cl = relabelClustAssign(cl);
+
 [pr, Qcells] = calDPMLogPost(tr.set, cl.b, cl.w, cl.p, mdp, opts);
-Qcells;
+
 fprintf('+    init : %10.2f %10s %8.2f sec ', pr, '', elapsedT);
 printClustAssign(cl.b);
-
 maxCl.logPost = -inf;
 [maxCl, hst, ~] = saveHist(cl, pr, maxCl, [], 1, elapsedT, Qcells);
 
@@ -50,7 +61,14 @@ for iter = 1:opts.maxIters
     elapsedT = toc(startT);
     [pr, Qcells] = calDPMLogPost(tr.set, cl.b, cl.w, cl.p, mdp, opts);
     [maxCl, hst, bUpdate] = saveHist(cl, pr, maxCl, hst, iter + 1, elapsedT, Qcells);
-    %input("stop")
+
+    if (mod(iter,50) == 0)
+        fprintf('saving maxCl \n');
+        sol = maxCl;
+        save('sol.mat','sol')
+    end
+
+    fprintf("weight acceptance: ", tot / accept)
     if iter == 1 || mod(iter, 100) == 0 || bUpdate || elapsedT > opts.maxTime
         fprintf('+ %4d-th : %10.2f %10.2f %8.2f sec ', ...
             iter, pr, maxCl.logPost, elapsedT);
@@ -93,6 +111,11 @@ end
 % trajectory
 function cl = updateClustAssign(m, trajCnt, cl, mdp, opts)
 
+% if there is an existing cluster already, cl.w fixed.
+% but probability of assignment into a cluster is proportional to the size of that cluster.
+% if try to parallerize for loop then the proportionality to cluster size is destroyed.
+
+
 for iiter = 1:opts.clIters;
     c = cl.b(m);    % m is the index. c = which cluster
     w = cl.w(:, c); % which weight
@@ -132,7 +155,7 @@ end
 
 % Perform Metropolis-Hastings update for weight of k-th cluster
 function cl = updateWeight(k, trajCnt, cl, mdp, opts)
-
+global accept
 for iiter = 1:opts.wIters;
     % (cl.b == k) = indices which belong to the kth cluster
     trajs = trajCnt(cl.b == k);
@@ -147,10 +170,12 @@ for iiter = 1:opts.wIters;
     % if the ratio of the likelihood of the observations under the new rewar function (w2)
     % is greater than the likelihood of the observations under the old reward function (w1)
     % then accept the new reward weight
+    total += 1
     if rand < ratio
         cl.w(:, k) = w2;
         cl.p(:, k) = p2;
         cl.v(:, k) = v2;
+        accept += 1
     end
 end
 
@@ -218,32 +243,33 @@ function cl = init(tr, mdp, opts)
 %     cl.v(:, i) = v;
 % end
 
-%initial_cluster = 100;
-cl.b = randi(tr.n, tr.n, 1); %ones(tr.n, 1); %
+initial_cluster = 10;
+cl.b = randi(initial_cluster, tr.n, 1);
+%cl.b = randi(tr.n, tr.n, 1); %ones(tr.n, 1); %
 %cap intial cluster size
 %cl.b = cluster asssignment for each data trajectory
 %cl.w = cluster weight for each data trajectory
 %cl.p = cluster policy for each data trajectory
 %cl.v = cluster value for each data value
 N = max(cl.b);
-cl.w = [];
-cl.p = [];
-cl.v = [];
-for i = 1:N
-    [w, p, v]  = newWeight(mdp, opts);
-    cl.w(:, i) = w;
-    cl.p(:, i) = p;
-    cl.v(:, i) = v;
-end
-
+% cl.w = [];
+% cl.p = [];
+% cl.v = [];
 % for i = 1:N
-%     indicesFill = find(cl.b == i); % vector containing indices value equal to i
 %     [w, p, v]  = newWeight(mdp, opts);
-%     for j = 1:length(indicesFill)
-%         cl.w(:, indicesFill(j)) = w;
-%         cl.p(:, indicesFill(j)) = p;
-%         cl.v(:, indicesFill(j)) = v;
-%     end
+%     cl.w(:, i) = w;
+%     cl.p(:, i) = p;
+%     cl.v(:, i) = v;
 % end
+
+for i = 1:N
+    indicesFill = find(cl.b == i); % vector containing indices value equal to i
+    [w, p, v]  = newWeight(mdp, opts);
+    for j = 1:length(indicesFill)
+        cl.w(:, indicesFill(j)) = w;
+        cl.p(:, indicesFill(j)) = p;
+        cl.v(:, indicesFill(j)) = v;
+    end
+end
 
 end
