@@ -230,8 +230,8 @@ end
 %     cl.p(:, i) = p;
 %     cl.v(:, i) = v;
 % end
-cl.llh   = nan(N, 1);
-cl.prior = nan(N, 1);
+cl.llh   = nan(tr.n, 1);
+cl.prior = nan(tr.n, 1);
 cl.gradL = nan(size(cl.w));
 cl.gradP = nan(size(cl.w));
 

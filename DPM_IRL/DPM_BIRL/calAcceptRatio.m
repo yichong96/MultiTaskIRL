@@ -1,6 +1,6 @@
 % Calculate acceptance ratio for Matropolis-Hastings update
 %
-function ratio = calAcceptRatio(trajCnt, w1, value1, w2, value2, mdp, opts)
+function ratio = calAcceptRatio(trajCnt, w1, value1, w2, value2, mdp, opts, NBQ1, NBQ2)
 
 QL1    = QfromV(value1, mdp, w1);
 BQ1    = opts.eta.*QL1;
@@ -12,6 +12,7 @@ BQ2    = opts.eta.*QL2;
 BQsum2 = log(sum(exp(BQ2), 2));
 NBQ2   = bsxfun(@minus, BQ2, BQsum2);
 
+%size(trajCnt,1)
 x = 0;
 if iscell(trajCnt)
     for m = 1:length(trajCnt)

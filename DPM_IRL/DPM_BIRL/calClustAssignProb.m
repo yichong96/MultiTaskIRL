@@ -11,9 +11,9 @@ ix = 1:length(z);
 Z  = sum(z.*ix);
 
 k  = vpa(ix) .^ vpa(z) .*factorial(vpa(z));
-k
+
 pr = factorial(vpa(Z))/prod(vpa(alpha:alpha+Z-1))*(alpha^sum(vpa(z)))/prod(vpa(k));
-pr
+
 
 % my own understanding of how to calculate p(c|alpha)
 %==============================================================

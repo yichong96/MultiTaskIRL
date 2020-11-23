@@ -27,8 +27,8 @@ for k = 1:max(belongTo)
     logPrior = logPrior + prior;
     Qcells{k} = NBQ;    % total log likelihoods of the observations
 end
-logLLH
-logPrior
+logLLH;
+logPrior;
 logPost = logDPprior + logLLH + logPrior;
 
 end
