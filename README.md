@@ -27,3 +27,7 @@ Run the repository from [AI clinician](https://github.com/matthieukomorowski/AI_
 ```
 run -r runMEIRL.m
 ```
+
+## References
+Base code taken from 
+- [Nonparametric Bayesian inverse reinforcement learning for multiple reward functions](http://papers.nips.cc/paper/4737-nonparametric-bayesian-inverse-reinforcement-learning-for-multiple-reward-functions.pdf)
