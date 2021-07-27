@@ -11,4 +11,19 @@ In this project, we attempt to model clinician's sepsis management policy as a m
 _**Reward Features**_ - The reward function _R(s,a,s')_ is modelled as a linear combination of 2 features. The first feature is an indicator variable _phi(s,a,s')_ where _phi(s,a,s') = 1_ when there is an increase in the Sequential Organ Failure Assessment score (SOFA) from _s_ to _s_, _phi(s,a,s') = 0_ when there is no change and _phi(s,a,s') = -1_ when there is a decrease. The second feature is an indicator variable _phi(s,a,s')_ that works similarly for arterial lactate. 
 
 ## Experimental results
+<img src="results.png" width="800" height="400" />
 
+- 1st row shows overall state distributions for patients in each cluster. (Left -> right shows healthier patients to unhealthier patients)
+- 2nd row shows the policy distributions for patients in each cluster. (Left -> right shows actions 0 to 24)
+- Table shows the average heart rate, platelet count and mean BP for patients in each cluster.
+
+### Analysis
+- Red cluster shows higher amount of vasopressors given to relatively more healthy patients. If comparison is done between the red, blue and green cluster (since their distributions are more left skewed), we see that the average heart rate and BP are higher for patients in the red cluster.  
+- Comparing the yellow and purple clusters, we observe that more vasopressors are given when the cluster exhibits higher heart rate and lower platelet count
+- The mode of the action distribution for the green cluster is not to give any treatment, which differs from that of the blue cluster. 
+
+## How to run
+Run the repository from [AI clinician](https://github.com/matthieukomorowski/AI_Clinician) to generate `mimicdata_MK.csv` file. Then run `process_interventions.ipynb` to generate `discretised_input_data.csv`. Run `Preprocessing/Preprocessing.ipynb` to generate the matrices to be used in the Multi - Task IRL algorithm. Lastlym run the below command in `DPM_IRL` folder
+```
+run -r runMEIRL.m
+```
